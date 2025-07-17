@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +23,7 @@ import AuctionSimulator from "@/components/AuctionSimulator";
 import StrategyComparison from "@/components/StrategyComparison";
 import AlgorithmEducation from "@/components/AlgorithmEducation";
 import { toast } from "sonner";
+import StrategyComparisonSimulator from "@/components/StrategyComparisonSimulator";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("simulator");
@@ -191,10 +191,14 @@ const Index = () => {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-5">
             <TabsTrigger value="simulator" className="flex items-center space-x-2">
               <PlayCircle className="w-4 h-4" />
               <span>Simulator</span>
+            </TabsTrigger>
+            <TabsTrigger value="comparison" className="flex items-center space-x-2">
+              <TrendingUp className="w-4 h-4" />
+              <span>Compare</span>
             </TabsTrigger>
             <TabsTrigger value="strategies" className="flex items-center space-x-2">
               <BarChart3 className="w-4 h-4" />
@@ -205,7 +209,7 @@ const Index = () => {
               <span>Learn</span>
             </TabsTrigger>
             <TabsTrigger value="analysis" className="flex items-center space-x-2">
-              <TrendingUp className="w-4 h-4" />
+              <Calculator className="w-4 h-4" />
               <span>Analysis</span>
             </TabsTrigger>
           </TabsList>
@@ -286,6 +290,23 @@ const Index = () => {
             </div>
 
             <AuctionSimulator />
+          </TabsContent>
+
+          <TabsContent value="comparison">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <TrendingUp className="w-5 h-5" />
+                  <span>Strategy Head-to-Head Comparison</span>
+                </CardTitle>
+                <CardDescription>
+                  Watch two different bidding strategies compete in real-time to see which performs better
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <StrategyComparisonSimulator />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="strategies">

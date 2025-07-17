@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   PlayCircle, 
   PauseCircle, 
@@ -18,7 +19,9 @@ import {
   TrendingUp,
   Brain,
   Target,
-  Trophy
+  Trophy,
+  MessageSquare,
+  Calculator
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,6 +33,8 @@ interface Bidder {
   currentBid: number;
   isActive: boolean;
   color: string;
+  profit: number;
+  won: boolean;
 }
 
 interface AuctionItem {
@@ -41,22 +46,33 @@ interface AuctionItem {
   category: string;
 }
 
+interface LogEntry {
+  id: number;
+  timestamp: string;
+  type: 'bid' | 'strategy' | 'system' | 'winner';
+  bidder?: string;
+  message: string;
+  amount?: number;
+}
+
 const AuctionSimulator = () => {
   const [auctionType, setAuctionType] = useState<string>("english");
   const [isRunning, setIsRunning] = useState(false);
   const [currentPrice, setCurrentPrice] = useState(100);
-  const [timeRemaining, setTimeRemaining] = useState(60);
+  const [timeRemaining, setTimeRemaining] = useState(30); // Reduced to 30 seconds
   const [selectedItem, setSelectedItem] = useState<AuctionItem | null>(null);
   const [userBudget, setUserBudget] = useState(1000);
   const [userStrategy, setUserStrategy] = useState("greedy");
   const [auctionProgress, setAuctionProgress] = useState(0);
   const [winner, setWinner] = useState<Bidder | null>(null);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [logCounter, setLogCounter] = useState(0);
 
   const [bidders, setBidders] = useState<Bidder[]>([
-    { id: 1, name: "Alice (Greedy)", strategy: "greedy", budget: 800, currentBid: 0, isActive: true, color: "bg-blue-500" },
-    { id: 2, name: "Bob (Dynamic)", strategy: "dynamic", budget: 1200, currentBid: 0, isActive: true, color: "bg-green-500" },
-    { id: 3, name: "Carol (Minimax)", strategy: "minimax", budget: 950, currentBid: 0, isActive: true, color: "bg-purple-500" },
-    { id: 4, name: "You", strategy: userStrategy, budget: userBudget, currentBid: 0, isActive: true, color: "bg-orange-500" }
+    { id: 1, name: "Alice (Greedy)", strategy: "greedy", budget: 800, currentBid: 0, isActive: true, color: "bg-blue-500", profit: 0, won: false },
+    { id: 2, name: "Bob (Dynamic)", strategy: "dynamic", budget: 1200, currentBid: 0, isActive: true, color: "bg-green-500", profit: 0, won: false },
+    { id: 3, name: "Carol (Minimax)", strategy: "minimax", budget: 950, currentBid: 0, isActive: true, color: "bg-purple-500", profit: 0, won: false },
+    { id: 4, name: "You", strategy: userStrategy, budget: userBudget, currentBid: 0, isActive: true, color: "bg-orange-500", profit: 0, won: false }
   ]);
 
   const auctionItems: AuctionItem[] = [
@@ -86,9 +102,30 @@ const AuctionSimulator = () => {
     }
   ];
 
+  const addLog = (type: LogEntry['type'], message: string, bidder?: string, amount?: number) => {
+    const newLog: LogEntry = {
+      id: logCounter,
+      timestamp: new Date().toLocaleTimeString(),
+      type,
+      bidder,
+      message,
+      amount
+    };
+    setLogs(prev => [newLog, ...prev.slice(0, 19)]); // Keep only last 20 logs
+    setLogCounter(prev => prev + 1);
+  };
+
+  const calculateProfit = (bidder: Bidder, winningBid: number, estimatedValue: number) => {
+    if (bidder.won) {
+      return estimatedValue - winningBid;
+    }
+    return 0; // No profit if didn't win
+  };
+
   useEffect(() => {
     if (selectedItem) {
       setCurrentPrice(selectedItem.startingPrice);
+      addLog('system', `Auction started for ${selectedItem.name}`);
     }
   }, [selectedItem]);
 
@@ -112,7 +149,7 @@ const AuctionSimulator = () => {
         simulateDutchAuctionPrice();
       }
 
-      setAuctionProgress(((60 - timeRemaining) / 60) * 100);
+      setAuctionProgress(((30 - timeRemaining) / 30) * 100); // Updated for 30 seconds
     }, 1000);
 
     return () => clearInterval(timer);
@@ -132,14 +169,16 @@ const AuctionSimulator = () => {
           // Greedy: Bid incrementally if below 70% of estimated value
           if (currentPrice < estimatedValue * 0.7 && remainingBudget > currentPrice * 0.1) {
             newBid = Math.min(currentPrice + 25, bidder.budget);
+            addLog('strategy', `Greedy strategy: Bidding aggressively early`, bidder.name, newBid);
           }
           break;
         case "dynamic":
           // Dynamic Programming: Optimal bidding based on time and competition
-          const timeRatio = timeRemaining / 60;
+          const timeRatio = timeRemaining / 30; // Updated for 30 seconds
           const optimalBid = estimatedValue * (0.8 - timeRatio * 0.2);
           if (currentPrice < optimalBid && remainingBudget > optimalBid - currentPrice) {
             newBid = Math.min(Math.floor(optimalBid), bidder.budget);
+            addLog('strategy', `Dynamic strategy: Calculated optimal bid based on time remaining`, bidder.name, newBid);
           }
           break;
         case "minimax":
@@ -149,17 +188,20 @@ const AuctionSimulator = () => {
           const strategicBid = Math.max(avgCompetitorBid * 1.1, currentPrice + 15);
           if (strategicBid < estimatedValue * 0.85 && remainingBudget > strategicBid - currentPrice) {
             newBid = Math.min(strategicBid, bidder.budget);
+            addLog('strategy', `Minimax strategy: Countering competitors' moves`, bidder.name, newBid);
           }
           break;
       }
 
       if (newBid > bidder.currentBid && newBid <= bidder.budget) {
         setCurrentPrice(newBid);
+        addLog('bid', `New bid placed`, bidder.name, newBid);
         return { ...bidder, currentBid: newBid };
       }
 
       // Deactivate if out of budget
       if (remainingBudget < 50) {
+        addLog('system', `${bidder.name} is out of budget`, bidder.name);
         return { ...bidder, isActive: false };
       }
 
@@ -168,7 +210,13 @@ const AuctionSimulator = () => {
   };
 
   const simulateDutchAuctionPrice = () => {
-    setCurrentPrice(prev => Math.max(prev - 20, 50));
+    setCurrentPrice(prev => {
+      const newPrice = Math.max(prev - 20, 50);
+      if (newPrice !== prev) {
+        addLog('system', `Dutch auction price dropped`, undefined, newPrice);
+      }
+      return newPrice;
+    });
   };
 
   const determineWinner = () => {
@@ -176,7 +224,17 @@ const AuctionSimulator = () => {
     const highestBidder = activeBidders.reduce((prev, current) => 
       prev.currentBid > current.currentBid ? prev : current
     );
+    
+    // Calculate profits for all bidders
+    const updatedBidders = bidders.map(bidder => {
+      const won = bidder.id === highestBidder.id;
+      const profit = won ? calculateProfit(bidder, highestBidder.currentBid, selectedItem?.estimatedValue || 0) : 0;
+      return { ...bidder, won, profit };
+    });
+    
+    setBidders(updatedBidders);
     setWinner(highestBidder);
+    addLog('winner', `Auction ended! Winner: ${highestBidder.name}`, highestBidder.name, highestBidder.currentBid);
     toast.success(`Auction ended! Winner: ${highestBidder.name} with bid $${highestBidder.currentBid}`);
   };
 
@@ -187,28 +245,35 @@ const AuctionSimulator = () => {
     }
     setIsRunning(true);
     setWinner(null);
-    setTimeRemaining(60);
+    setTimeRemaining(30); // Updated to 30 seconds
     setAuctionProgress(0);
+    setLogs([]);
+    addLog('system', 'Auction started! Let the bidding begin!');
     toast.success("Auction started!");
   };
 
   const pauseAuction = () => {
     setIsRunning(false);
+    addLog('system', 'Auction paused');
     toast.info("Auction paused");
   };
 
   const resetAuction = () => {
     setIsRunning(false);
     setCurrentPrice(selectedItem?.startingPrice || 100);
-    setTimeRemaining(60);
+    setTimeRemaining(30); // Updated to 30 seconds
     setAuctionProgress(0);
     setWinner(null);
+    setLogs([]);
     setBidders(prev => prev.map(bidder => ({
       ...bidder,
       currentBid: 0,
       isActive: true,
-      budget: bidder.name === "You" ? userBudget : bidder.budget
+      budget: bidder.name === "You" ? userBudget : bidder.budget,
+      profit: 0,
+      won: false
     })));
+    addLog('system', 'Auction reset');
     toast.info("Auction reset");
   };
 
@@ -230,6 +295,7 @@ const AuctionSimulator = () => {
         : bidder
     ));
     setCurrentPrice(bidAmount);
+    addLog('bid', `Manual bid placed`, "You", bidAmount);
     toast.success(`Bid placed: $${bidAmount}`);
   };
 
@@ -325,7 +391,9 @@ const AuctionSimulator = () => {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Timer className="w-4 h-4" />
-                  <span className="font-mono">{Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}</span>
+                  <span className="font-mono text-lg">
+                    {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
+                  </span>
                 </div>
               </CardTitle>
             </CardHeader>
@@ -350,7 +418,7 @@ const AuctionSimulator = () => {
                 <p className="text-gray-600">Current {auctionType === "dutch" ? "Price" : "Highest Bid"}</p>
               </div>
 
-              <Progress value={auctionProgress} className="h-2" />
+              <Progress value={auctionProgress} className="h-3" />
 
               <div className="flex justify-center space-x-3">
                 {!isRunning ? (
@@ -381,19 +449,23 @@ const AuctionSimulator = () => {
                   <Trophy className="w-8 h-8 text-green-600 mx-auto mb-2" />
                   <h3 className="font-semibold text-green-800">Auction Winner!</h3>
                   <p className="text-green-700">{winner.name} - ${winner.currentBid}</p>
+                  <p className="text-sm text-green-600 mt-1">
+                    Profit: ${winner.profit > 0 ? `+${winner.profit}` : winner.profit}
+                  </p>
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Bidders Panel */}
-        <div>
+        {/* Bidders & Logs Panel */}
+        <div className="space-y-4">
+          {/* Bidders Panel */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Users className="w-5 h-5" />
-                <span>Bidders</span>
+                <span>Bidders & Profits</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -404,8 +476,14 @@ const AuctionSimulator = () => {
                       <div className={`w-3 h-3 rounded-full ${bidder.color}`}></div>
                       <span className="font-medium text-sm">{bidder.name}</span>
                       {!bidder.isActive && <Badge variant="destructive" className="text-xs">Out</Badge>}
+                      {bidder.won && <Badge className="bg-green-500 text-xs">Winner</Badge>}
                     </div>
-                    <span className="text-sm font-semibold">${bidder.currentBid}</span>
+                    <div className="text-right">
+                      <div className="text-sm font-semibold">${bidder.currentBid}</div>
+                      <div className={`text-xs ${bidder.profit > 0 ? 'text-green-600' : bidder.profit < 0 ? 'text-red-600' : 'text-gray-500'}`}>
+                        Profit: {bidder.profit > 0 ? `+$${bidder.profit}` : `$${bidder.profit}`}
+                      </div>
+                    </div>
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs text-gray-600">
@@ -420,6 +498,46 @@ const AuctionSimulator = () => {
                   {index < bidders.length - 1 && <Separator />}
                 </div>
               ))}
+            </CardContent>
+          </Card>
+
+          {/* Real-time Logs */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <MessageSquare className="w-5 h-5" />
+                <span>Live Commentary</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-64">
+                <div className="space-y-2">
+                  {logs.map((log) => (
+                    <div key={log.id} className="text-sm border-l-2 border-gray-200 pl-3 py-1">
+                      <div className="flex items-center justify-between">
+                        <span className={`font-medium ${
+                          log.type === 'bid' ? 'text-blue-600' :
+                          log.type === 'strategy' ? 'text-purple-600' :
+                          log.type === 'winner' ? 'text-green-600' :
+                          'text-gray-600'
+                        }`}>
+                          {log.bidder || 'System'}
+                        </span>
+                        <span className="text-xs text-gray-500">{log.timestamp}</span>
+                      </div>
+                      <p className="text-gray-700">{log.message}</p>
+                      {log.amount && (
+                        <p className="text-xs font-semibold text-green-600">${log.amount}</p>
+                      )}
+                    </div>
+                  ))}
+                  {logs.length === 0 && (
+                    <p className="text-gray-500 text-center py-4">
+                      No activity yet. Start an auction to see live commentary!
+                    </p>
+                  )}
+                </div>
+              </ScrollArea>
             </CardContent>
           </Card>
         </div>
