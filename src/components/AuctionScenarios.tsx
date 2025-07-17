@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,6 +54,13 @@ interface Scenario {
   budgetLimit?: number;
 }
 
+interface ScenarioResults {
+  totalProfit: Record<string, number>;
+  itemsWon: Record<string, number>;
+  efficiency: Record<string, number>;
+  spending: Record<string, number>;
+}
+
 const AuctionScenarios = () => {
   const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
   const [isRunning, setIsRunning] = useState(false);
@@ -62,7 +68,7 @@ const AuctionScenarios = () => {
   const [bidders, setBidders] = useState<ScenarioBidder[]>([]);
   const [items, setItems] = useState<ScenarioItem[]>([]);
   const [auctionProgress, setAuctionProgress] = useState(0);
-  const [results, setResults] = useState<any>(null);
+  const [results, setResults] = useState<ScenarioResults | null>(null);
 
   const scenarios: Scenario[] = [
     {
@@ -228,7 +234,7 @@ const AuctionScenarios = () => {
   };
 
   const finalizeAuction = () => {
-    const finalResults: any = {
+    const finalResults: ScenarioResults = {
       totalProfit: {},
       itemsWon: {},
       efficiency: {},
