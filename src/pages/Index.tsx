@@ -17,13 +17,17 @@ import {
   Settings,
   Trophy,
   Lightbulb,
-  Calculator
+  Calculator,
+  FileText,
+  Zap
 } from "lucide-react";
 import AuctionSimulator from "@/components/AuctionSimulator";
 import StrategyComparison from "@/components/StrategyComparison";
 import AlgorithmEducation from "@/components/AlgorithmEducation";
-import { toast } from "sonner";
 import StrategyComparisonSimulator from "@/components/StrategyComparisonSimulator";
+import AuctionScenarios from "@/components/AuctionScenarios";
+import AnalysisReport from "@/components/AnalysisReport";
+import { toast } from "sonner";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("simulator");
@@ -191,7 +195,7 @@ const Index = () => {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:grid-cols-6">
             <TabsTrigger value="simulator" className="flex items-center space-x-2">
               <PlayCircle className="w-4 h-4" />
               <span>Simulator</span>
@@ -199,6 +203,10 @@ const Index = () => {
             <TabsTrigger value="comparison" className="flex items-center space-x-2">
               <TrendingUp className="w-4 h-4" />
               <span>Compare</span>
+            </TabsTrigger>
+            <TabsTrigger value="scenarios" className="flex items-center space-x-2">
+              <Zap className="w-4 h-4" />
+              <span>Scenarios</span>
             </TabsTrigger>
             <TabsTrigger value="strategies" className="flex items-center space-x-2">
               <BarChart3 className="w-4 h-4" />
@@ -209,8 +217,8 @@ const Index = () => {
               <span>Learn</span>
             </TabsTrigger>
             <TabsTrigger value="analysis" className="flex items-center space-x-2">
-              <Calculator className="w-4 h-4" />
-              <span>Analysis</span>
+              <FileText className="w-4 h-4" />
+              <span>Reports</span>
             </TabsTrigger>
           </TabsList>
 
@@ -309,6 +317,23 @@ const Index = () => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="scenarios">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Zap className="w-5 h-5" />
+                  <span>Specialized Auction Scenarios</span>
+                </CardTitle>
+                <CardDescription>
+                  Test specific scenarios like multi-item auctions, budget constraints, and strategic battles
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AuctionScenarios />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="strategies">
             <StrategyComparison />
           </TabsContent>
@@ -320,24 +345,16 @@ const Index = () => {
           <TabsContent value="analysis" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Performance Analysis</CardTitle>
+                <CardTitle className="flex items-center space-x-2">
+                  <FileText className="w-5 h-5" />
+                  <span>Performance Analysis & Reports</span>
+                </CardTitle>
                 <CardDescription>
-                  Detailed analysis of algorithm performance across different auction scenarios
+                  Generate detailed analysis reports and insights from auction simulations
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-12">
-                  <TrendingUp className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-600 mb-2">Advanced Analytics</h3>
-                  <p className="text-gray-500 mb-4">
-                    Run simulations to generate detailed performance reports
-                  </p>
-                  <Button 
-                    onClick={() => toast.success("Analysis feature coming soon with detailed metrics and charts!")}
-                  >
-                    Generate Report
-                  </Button>
-                </div>
+                <AnalysisReport />
               </CardContent>
             </Card>
           </TabsContent>
