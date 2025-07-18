@@ -1,15 +1,19 @@
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { 
   MessageSquare,
   Brain,
   Target,
   Zap,
   Trophy,
-  Clock
+  Clock,
+  ArrowDown,
+  Pause,
+  Play
 } from "lucide-react";
 
 interface CommentaryEntry {
@@ -34,33 +38,49 @@ interface RealTimeCommentaryProps {
 const RealTimeCommentary = ({ commentary, currentRound, isActive }: RealTimeCommentaryProps) => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [autoScroll, setAutoScroll] = useState(true);
+  const [isNearBottom, setIsNearBottom] = useState(true);
 
-  // Auto-scroll to bottom when new comments are added
+  // Check if user is near bottom of scroll area
+  const checkScrollPosition = () => {
+    if (scrollAreaRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef.current;
+      const isNear = scrollHeight - scrollTop - clientHeight < 50;
+      setIsNearBottom(isNear);
+    }
+  };
+
+  // Auto-scroll to bottom when new comments are added, but only if auto-scroll is enabled and user is near bottom
   useEffect(() => {
-    if (bottomRef.current) {
+    if (autoScroll && isNearBottom && bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [commentary]);
+  }, [commentary, autoScroll, isNearBottom]);
+
+  const scrollToBottom = () => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setAutoScroll(true);
+  };
 
   const getTypeIcon = (type: string, strategy?: string) => {
     switch (type) {
       case 'strategy':
-        if (strategy === 'greedy') return <Zap className="w-4 h-4 text-blue-500" />;
-        if (strategy === 'dynamic') return <Brain className="w-4 h-4 text-green-500" />;
-        if (strategy === 'minimax') return <Target className="w-4 h-4 text-purple-500" />;
-        return <MessageSquare className="w-4 h-4" />;
-      case 'action': return <Clock className="w-4 h-4 text-orange-500" />;
-      case 'result': return <Trophy className="w-4 h-4 text-yellow-500" />;
-      default: return <MessageSquare className="w-4 h-4 text-gray-500" />;
+        if (strategy === 'greedy') return <Zap className="w-3 h-3 text-blue-500" />;
+        if (strategy === 'dynamic') return <Brain className="w-3 h-3 text-green-500" />;
+        if (strategy === 'minimax') return <Target className="w-3 h-3 text-purple-500" />;
+        return <MessageSquare className="w-3 h-3" />;
+      case 'action': return <Clock className="w-3 h-3 text-orange-500" />;
+      case 'result': return <Trophy className="w-3 h-3 text-yellow-500" />;
+      default: return <MessageSquare className="w-3 h-3 text-gray-500" />;
     }
   };
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'strategy': return 'border-blue-200 bg-blue-50';
-      case 'action': return 'border-orange-200 bg-orange-50';
-      case 'result': return 'border-green-200 bg-green-50';
-      default: return 'border-gray-200 bg-gray-50';
+      case 'strategy': return 'border-blue-200 bg-blue-50/50';
+      case 'action': return 'border-orange-200 bg-orange-50/50';
+      case 'result': return 'border-green-200 bg-green-50/50';
+      default: return 'border-gray-200 bg-gray-50/50';
     }
   };
 
@@ -74,21 +94,47 @@ const RealTimeCommentary = ({ commentary, currentRound, isActive }: RealTimeComm
   };
 
   return (
-    <Card className="h-full bg-white/90 backdrop-blur-lg border border-white/20 shadow-xl">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center space-x-2 text-sm">
-          <MessageSquare className="w-4 h-4 text-purple-600" />
-          <span>Live Commentary</span>
-          {isActive && (
-            <Badge className="bg-red-500 animate-pulse text-xs px-2 py-0">
-              <div className="w-1.5 h-1.5 bg-white rounded-full mr-1"></div>
-              LIVE
-            </Badge>
-          )}
-        </CardTitle>
+    <Card className="h-full bg-white/90 backdrop-blur-lg border border-white/20 shadow-lg">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center space-x-2 text-sm">
+            <MessageSquare className="w-4 h-4 text-purple-600" />
+            <span>Live Commentary</span>
+            {isActive && (
+              <Badge className="bg-red-500 animate-pulse text-xs px-2 py-0">
+                <div className="w-1.5 h-1.5 bg-white rounded-full mr-1"></div>
+                LIVE
+              </Badge>
+            )}
+          </CardTitle>
+          <div className="flex items-center space-x-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setAutoScroll(!autoScroll)}
+              className="h-6 w-6 p-0"
+            >
+              {autoScroll ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+            </Button>
+            {!isNearBottom && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={scrollToBottom}
+                className="h-6 w-6 p-0"
+              >
+                <ArrowDown className="w-3 h-3" />
+              </Button>
+            )}
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="pt-0">
-        <ScrollArea className="h-64" ref={scrollAreaRef}>
+        <ScrollArea 
+          className="h-64" 
+          ref={scrollAreaRef}
+          onScrollCapture={checkScrollPosition}
+        >
           <div className="space-y-2 pr-2">
             {commentary.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
@@ -99,14 +145,14 @@ const RealTimeCommentary = ({ commentary, currentRound, isActive }: RealTimeComm
               commentary.map((entry) => (
                 <div
                   key={entry.id}
-                  className={`p-3 rounded-lg border-l-4 ${getTypeColor(entry.type)} animate-fade-in`}
+                  className={`p-2 rounded-lg border-l-3 ${getTypeColor(entry.type)} animate-fade-in`}
                 >
                   <div className="flex items-start justify-between mb-1">
                     <div className="flex items-center space-x-2">
                       {getTypeIcon(entry.type, entry.strategy)}
                       <Badge 
                         variant="outline" 
-                        className={`text-xs ${getStrategyColor(entry.strategy)} text-white border-0 px-2 py-0`}
+                        className={`text-xs ${getStrategyColor(entry.strategy)} text-white border-0 px-1.5 py-0`}
                       >
                         {entry.bidder}
                       </Badge>
@@ -127,7 +173,7 @@ const RealTimeCommentary = ({ commentary, currentRound, isActive }: RealTimeComm
                   
                   {entry.amount && (
                     <div className="mt-1">
-                      <Badge className="bg-green-100 text-green-700 text-xs px-2 py-0">
+                      <Badge className="bg-green-100 text-green-700 text-xs px-1.5 py-0">
                         ₹{entry.amount}
                       </Badge>
                     </div>

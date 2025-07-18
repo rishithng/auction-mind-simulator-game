@@ -1,638 +1,447 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 import { 
+  BookOpen, 
   Brain, 
+  Target, 
+  Zap, 
   Calculator, 
+  TrendingUp, 
+  Timer, 
   Users, 
-  DollarSign, 
-  PlayCircle, 
-  BookOpen,
-  Code,
+  DollarSign,
+  PlayCircle,
+  ArrowRight,
+  CheckCircle,
+  Info,
   Lightbulb,
-  TrendingUp,
-  Target,
-  Clock,
-  Layers,
-  GitBranch,
-  Zap
+  Eye,
+  Lock,
+  Gavel,
+  Clock
 } from "lucide-react";
-import { toast } from "sonner";
-
-interface AlgorithmStep {
-  step: number;
-  title: string;
-  description: string;
-  code?: string;
-  complexity?: string;
-}
-
-interface AlgorithmInfo {
-  name: string;
-  icon: any;
-  color: string;
-  description: string;
-  timeComplexity: string;
-  spaceComplexity: string;
-  advantages: string[];
-  disadvantages: string[];
-  steps: AlgorithmStep[];
-  applications: string[];
-  pseudocode: string;
-}
 
 const AlgorithmEducation = () => {
-  const [selectedAlgorithm, setSelectedAlgorithm] = useState<string>("greedy");
-  const [currentStep, setCurrentStep] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [selectedAuction, setSelectedAuction] = useState("english");
+  const [selectedStrategy, setSelectedStrategy] = useState("greedy");
 
-  const algorithms: Record<string, AlgorithmInfo> = {
-    greedy: {
-      name: "Greedy Algorithm",
-      icon: Zap,
-      color: "text-green-600",
-      description: "Makes locally optimal choices at each step, hoping to find a global optimum. In auctions, it places bids based on immediate best decisions without considering future consequences.",
-      timeComplexity: "O(n)",
-      spaceComplexity: "O(1)",
-      advantages: [
-        "Fast execution and simple implementation",
-        "Low memory requirements",
-        "Works well for time-sensitive decisions",
-        "Good for problems with greedy choice property"
-      ],
-      disadvantages: [
-        "May not find the globally optimal solution",
-        "Can be shortsighted in strategic scenarios",
-        "Performance depends on problem structure",
-        "No backtracking capability"
-      ],
-      applications: [
-        "High-frequency trading",
-        "Real-time bidding systems",
-        "Quick decision scenarios",
-        "Time-constrained auctions"
-      ],
-      pseudocode: `
-function greedyBidding(currentPrice, budget, timeLeft):
-    if currentPrice < estimatedValue * 0.7:
-        if budget >= currentPrice + increment:
-            return currentPrice + increment
-    return null // Don't bid
-      `,
-      steps: [
-        {
-          step: 1,
-          title: "Evaluate Current State",
-          description: "Assess the current auction price and remaining budget",
-          complexity: "O(1)"
-        },
-        {
-          step: 2,
-          title: "Apply Local Rule",
-          description: "Make decision based on immediate conditions (price vs estimated value)",
-          complexity: "O(1)"
-        },
-        {
-          step: 3,
-          title: "Execute Action",
-          description: "Place bid immediately if conditions are met",
-          complexity: "O(1)"
-        },
-        {
-          step: 4,
-          title: "Update State",
-          description: "Update budget and continue to next opportunity",
-          complexity: "O(1)"
-        }
-      ]
+  const auctionTypes = [
+    {
+      id: "english",
+      name: "English Auction",
+      icon: TrendingUp,
+      description: "Open ascending-price auction where bidders openly compete",
+      details: {
+        mechanism: "Bidders can see all bids and compete by placing higher bids until no one is willing to bid higher.",
+        advantages: ["Transparent process", "Maximizes seller revenue", "Simple to understand"],
+        disadvantages: ["Can intimidate smaller bidders", "May lead to overbidding"],
+        realWorld: "Art auctions, antique sales, livestock markets",
+        howItWorks: [
+          "Auctioneer starts with a reserve price",
+          "Bidders raise their hands or call out higher bids",
+          "Highest bidder wins when no one bids higher",
+          "Winner pays their bid amount"
+        ]
+      },
+      color: "from-green-500 to-emerald-600"
     },
-    dynamic: {
+    {
+      id: "dutch",
+      name: "Dutch Auction",
+      icon: Timer,
+      description: "Descending-price auction where price drops until someone bids",
+      details: {
+        mechanism: "Price starts high and gradually decreases until a bidder accepts the current price.",
+        advantages: ["Quick resolution", "First-come advantage", "No bidding wars"],
+        disadvantages: ["May not maximize revenue", "Requires good timing"],
+        realWorld: "Flower markets in Netherlands, IPO shares, perishable goods",
+        howItWorks: [
+          "Auctioneer starts with a high price",
+          "Price decreases at regular intervals",
+          "First bidder to accept wins immediately",
+          "Winner pays the accepted price"
+        ]
+      },
+      color: "from-blue-500 to-cyan-600"
+    },
+    {
+      id: "sealed",
+      name: "Sealed-bid Auction",
+      icon: Lock,
+      description: "Private simultaneous bidding where bids are kept secret",
+      details: {
+        mechanism: "All bidders submit sealed bids simultaneously without knowing others' bids.",
+        advantages: ["No bidding pressure", "Strategic complexity", "Fair for all participants"],
+        disadvantages: ["Information uncertainty", "May underbid"],
+        realWorld: "Government contracts, construction bids, online advertising",
+        howItWorks: [
+          "All bidders submit bids in sealed envelopes",
+          "Bids are opened simultaneously",
+          "Highest bidder wins",
+          "Winner pays their bid amount (first-price)"
+        ]
+      },
+      color: "from-purple-500 to-indigo-600"
+    },
+    {
+      id: "vickrey",
+      name: "Vickrey Auction",
+      icon: Brain,
+      description: "Second-price sealed auction with strategic truth-telling",
+      details: {
+        mechanism: "Sealed-bid auction where highest bidder wins but pays the second-highest bid.",
+        advantages: ["Encourages truthful bidding", "Theoretically optimal", "Reduces strategic manipulation"],
+        disadvantages: ["Complex to understand", "Trust issues with payment"],
+        realWorld: "Online advertising (modified versions), academic research, some government auctions",
+        howItWorks: [
+          "All bidders submit sealed bids",
+          "Highest bidder wins the auction",
+          "Winner pays the second-highest bid amount",
+          "Encourages bidding true valuation"
+        ]
+      },
+      color: "from-orange-500 to-red-600"
+    }
+  ];
+
+  const strategies = [
+    {
+      id: "greedy",
+      name: "Greedy Strategy",
+      icon: Zap,
+      description: "Makes quick decisions based on immediate value",
+      complexity: "Beginner",
+      efficiency: 85,
+      details: {
+        concept: "Always chooses the option that looks best right now, without considering future consequences.",
+        algorithm: "If (item_value > current_price) then bid, else skip",
+        strengths: ["Fast execution", "Simple logic", "Good for time-sensitive auctions"],
+        weaknesses: ["May overspend early", "Doesn't consider future items", "Suboptimal budget allocation"],
+        bestFor: "Quick auctions, single-item bidding, when speed matters more than optimization"
+      },
+      color: "text-blue-600"
+    },
+    {
+      id: "dynamic",
       name: "Dynamic Programming",
       icon: Calculator,
-      color: "text-blue-600",
-      description: "Solves complex problems by breaking them down into simpler subproblems and storing results to avoid redundant calculations. Optimal for budget allocation in auctions.",
-      timeComplexity: "O(n²)",
-      spaceComplexity: "O(n)",
-      advantages: [
-        "Guarantees optimal solution",
-        "Avoids redundant calculations",
-        "Handles overlapping subproblems efficiently",
-        "Excellent for budget optimization"
-      ],
-      disadvantages: [
-        "Higher computational complexity",
-        "Requires more memory",
-        "May be overkill for simple problems",
-        "Setup time can be significant"
-      ],
-      applications: [
-        "Budget allocation across multiple auctions",
-        "Long-term bidding strategies",
-        "Portfolio optimization",
-        "Value maximization problems"
-      ],
-      pseudocode: `
-function dynamicBidding(items, budget, timeSteps):
-    dp = array[items][budget][timeSteps]
-    
-    for each item i:
-        for each budget b:
-            for each time t:
-                dp[i][b][t] = max(
-                    bid(i, b, t) + dp[i-1][b-cost][t-1],
-                    dp[i-1][b][t]
-                )
-    return dp[items][budget][timeSteps]
-      `,
-      steps: [
-        {
-          step: 1,
-          title: "Define Subproblems",
-          description: "Break auction decisions into states: (items, budget, time)",
-          complexity: "O(1)"
-        },
-        {
-          step: 2,
-          title: "Initialize Base Cases",
-          description: "Set up boundary conditions for the DP table",
-          complexity: "O(n)"
-        },
-        {
-          step: 3,
-          title: "Fill DP Table",
-          description: "Compute optimal solutions for each subproblem",
-          complexity: "O(n²)"
-        },
-        {
-          step: 4,
-          title: "Trace Back Solution",
-          description: "Reconstruct the optimal bidding sequence",
-          complexity: "O(n)"
-        }
-      ]
+      description: "Optimal budget allocation considering all future items",
+      complexity: "Advanced",
+      efficiency: 92,
+      details: {
+        concept: "Calculates the optimal bidding strategy by considering all possible future scenarios and outcomes.",
+        algorithm: "Builds a table of optimal decisions for each budget state and remaining items",
+        strengths: ["Mathematically optimal", "Considers future items", "Maximizes expected value"],
+        weaknesses: ["Computationally expensive", "Requires complete information", "May be slow"],
+        bestFor: "Multi-item auctions, budget constraints, when optimization is critical"
+      },
+      color: "text-green-600"
     },
-    minimax: {
+    {
+      id: "minimax",
       name: "Game Theory (Minimax)",
-      icon: Users,
-      color: "text-purple-600",
-      description: "Game-theoretic approach that considers opponent strategies. Minimizes the worst-case scenario while maximizing own utility in competitive bidding situations.",
-      timeComplexity: "O(b^d)",
-      spaceComplexity: "O(bd)",
-      advantages: [
-        "Accounts for opponent behavior",
-        "Strategic decision making",
-        "Good for competitive environments",
-        "Handles uncertainty well"
-      ],
-      disadvantages: [
-        "Exponential time complexity",
-        "Assumes rational opponents",
-        "Requires opponent modeling",
-        "Complex implementation"
-      ],
-      applications: [
-        "Sealed-bid auctions",
-        "Competitive bidding scenarios",
-        "Strategic planning",
-        "Multi-agent environments"
-      ],
-      pseudocode: `
-function minimax(gameState, depth, isMaxPlayer):
-    if depth == 0 or gameOver(gameState):
-        return evaluate(gameState)
-    
-    if isMaxPlayer:
-        bestValue = -infinity
-        for each move in possibleMoves(gameState):
-            value = minimax(makeMove(gameState, move), 
-                           depth-1, false)
-            bestValue = max(bestValue, value)
-        return bestValue
-    else:
-        bestValue = +infinity
-        for each move in possibleMoves(gameState):
-            value = minimax(makeMove(gameState, move), 
-                           depth-1, true)
-            bestValue = min(bestValue, value)
-        return bestValue
-      `,
-      steps: [
-        {
-          step: 1,
-          title: "Model Game Tree",
-          description: "Create decision tree with all possible moves and counter-moves",
-          complexity: "O(b^d)"
-        },
-        {
-          step: 2,
-          title: "Evaluate Positions",
-          description: "Assess utility of each terminal game state",
-          complexity: "O(1)"
-        },
-        {
-          step: 3,
-          title: "Propagate Values",
-          description: "Use minimax principle to propagate values up the tree",
-          complexity: "O(b^d)"
-        },
-        {
-          step: 4,
-          title: "Select Best Move",
-          description: "Choose the move that maximizes minimum guaranteed outcome",
-          complexity: "O(b)"
-        }
-      ]
+      icon: Target,
+      description: "Considers opponent strategies and counter-moves",
+      complexity: "Expert",
+      efficiency: 88,
+      details: {
+        concept: "Assumes opponents are rational and tries to minimize the maximum loss while maximizing minimum gain.",
+        algorithm: "Evaluates opponent responses and chooses moves that minimize worst-case outcomes",
+        strengths: ["Opponent-aware", "Strategic depth", "Good against skilled opponents"],
+        weaknesses: ["Complex calculations", "Assumes rational opponents", "May be overly conservative"],
+        bestFor: "Competitive environments, experienced opponents, strategic auctions"
+      },
+      color: "text-purple-600"
     },
-    knapsack: {
+    {
+      id: "knapsack",
       name: "Knapsack Optimization",
       icon: DollarSign,
-      color: "text-orange-600",
-      description: "Optimizes value-to-cost ratio by selecting the best combination of items within budget constraints. Perfect for portfolio bidding and resource allocation.",
-      timeComplexity: "O(nW)",
-      spaceComplexity: "O(nW)",
-      advantages: [
-        "Optimal resource allocation",
-        "Handles multiple constraints",
-        "Good for portfolio problems",
-        "Maximizes utility per unit cost"
-      ],
-      disadvantages: [
-        "Pseudo-polynomial complexity",
-        "Requires discrete values",
-        "Memory intensive for large problems",
-        "Setup complexity"
-      ],
-      applications: [
-        "Multi-item auction bidding",
-        "Portfolio optimization",
-        "Resource allocation",
-        "Budget distribution"
-      ],
-      pseudocode: `
-function knapsackBidding(items, budget):
-    dp = array[items+1][budget+1]
-    
-    for i from 1 to items:
-        for w from 1 to budget:
-            if cost[i] <= w:
-                dp[i][w] = max(
-                    value[i] + dp[i-1][w-cost[i]],
-                    dp[i-1][w]
-                )
-            else:
-                dp[i][w] = dp[i-1][w]
-    
-    return dp[items][budget]
-      `,
-      steps: [
-        {
-          step: 1,
-          title: "Define Items and Constraints",
-          description: "List auction items with values, costs, and total budget",
-          complexity: "O(n)"
-        },
-        {
-          step: 2,
-          title: "Initialize DP Table",
-          description: "Create table for all item-budget combinations",
-          complexity: "O(nW)"
-        },
-        {
-          step: 3,
-          title: "Fill Table Optimally",
-          description: "Compute maximum value for each subproblem",
-          complexity: "O(nW)"
-        },
-        {
-          step: 4,
-          title: "Extract Solution",
-          description: "Backtrack to find which items to bid on",
-          complexity: "O(n)"
-        }
-      ]
+      description: "Maximizes value within budget constraints",
+      complexity: "Intermediate",
+      efficiency: 90,
+      details: {
+        concept: "Treats auction as a knapsack problem, selecting items that maximize total value within budget.",
+        algorithm: "Uses dynamic programming to find optimal combination of items within budget constraint",
+        strengths: ["Budget-aware", "Value optimization", "Handles constraints well"],
+        weaknesses: ["Requires value estimates", "May miss strategic opportunities", "Static approach"],
+        bestFor: "Fixed budgets, value-focused bidding, multiple similar items"
+      },
+      color: "text-orange-600"
     }
-  };
+  ];
 
-  const runStepByStep = async () => {
-    setIsAnimating(true);
-    const algorithm = algorithms[selectedAlgorithm];
-    
-    for (let i = 0; i < algorithm.steps.length; i++) {
-      setCurrentStep(i);
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
-    
-    setIsAnimating(false);
-    toast.success(`${algorithm.name} demonstration completed!`);
-  };
-
-  const currentAlgorithm = algorithms[selectedAlgorithm];
+  const selectedAuctionData = auctionTypes.find(a => a.id === selectedAuction);
+  const selectedStrategyData = strategies.find(s => s.id === selectedStrategy);
 
   return (
     <div className="space-y-6">
-      {/* Algorithm Selector */}
-      <Card>
+      <Card className="bg-white/90 backdrop-blur-lg border border-white/20 shadow-xl">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <BookOpen className="w-5 h-5" />
-            <span>Algorithm Learning Center</span>
+            <BookOpen className="w-5 h-5 text-blue-600" />
+            <span>Auction Theory & AI Strategies</span>
           </CardTitle>
           <CardDescription>
-            Explore and understand the core algorithms used in optimal bidding strategies
+            Learn about different auction mechanisms and AI bidding strategies with interactive examples
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {Object.entries(algorithms).map(([key, algorithm]) => {
-              const IconComponent = algorithm.icon;
-              return (
-                <Card 
-                  key={key}
-                  className={`cursor-pointer transition-all hover:shadow-md ${
-                    selectedAlgorithm === key ? 'ring-2 ring-blue-500 bg-blue-50' : ''
-                  }`}
-                  onClick={() => setSelectedAlgorithm(key)}
-                >
-                  <CardContent className="p-4 text-center">
-                    <IconComponent className={`w-8 h-8 mx-auto mb-2 ${algorithm.color}`} />
-                    <h3 className="font-semibold text-sm">{algorithm.name}</h3>
-                    <div className="mt-2 space-y-1">
-                      <Badge variant="outline" className="text-xs">
-                        Time: {algorithm.timeComplexity}
-                      </Badge>
-                      <br />
-                      <Badge variant="outline" className="text-xs">
-                        Space: {algorithm.spaceComplexity}
-                      </Badge>
+      </Card>
+
+      <Tabs defaultValue="auctions" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 bg-white/80 backdrop-blur-sm">
+          <TabsTrigger value="auctions" className="flex items-center space-x-2">
+            <Gavel className="w-4 h-4" />
+            <span>Auction Types</span>
+          </TabsTrigger>
+          <TabsTrigger value="strategies" className="flex items-center space-x-2">
+            <Brain className="w-4 h-4" />
+            <span>AI Strategies</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="auctions" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Auction Selection */}
+            <Card className="bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-lg">Auction Mechanisms</CardTitle>
+                <CardDescription>Select an auction type to learn more</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {auctionTypes.map((auction) => {
+                  const IconComponent = auction.icon;
+                  return (
+                    <Button
+                      key={auction.id}
+                      variant={selectedAuction === auction.id ? "default" : "outline"}
+                      className="w-full justify-start h-auto p-3"
+                      onClick={() => setSelectedAuction(auction.id)}
+                    >
+                      <div className="flex items-center space-x-3 text-left">
+                        <div className={`w-8 h-8 bg-gradient-to-br ${auction.color} rounded-lg flex items-center justify-center`}>
+                          <IconComponent className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-sm">{auction.name}</div>
+                          <div className="text-xs text-gray-600">{auction.description}</div>
+                        </div>
+                      </div>
+                    </Button>
+                  );
+                })}
+              </CardContent>
+            </Card>
+
+            {/* Auction Details */}
+            <div className="lg:col-span-2">
+              {selectedAuctionData && (
+                <Card className="bg-white/80 backdrop-blur-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <selectedAuctionData.icon className="w-5 h-5" />
+                      <span>{selectedAuctionData.name}</span>
+                    </CardTitle>
+                    <CardDescription>{selectedAuctionData.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <h4 className="font-semibold mb-2 flex items-center space-x-2">
+                        <Info className="w-4 h-4 text-blue-500" />
+                        <span>How it Works</span>
+                      </h4>
+                      <p className="text-sm text-gray-700 mb-3">{selectedAuctionData.details.mechanism}</p>
+                      <div className="space-y-2">
+                        {selectedAuctionData.details.howItWorks.map((step, index) => (
+                          <div key={index} className="flex items-start space-x-2">
+                            <Badge variant="outline" className="w-6 h-6 rounded-full flex items-center justify-center p-0 text-xs">
+                              {index + 1}
+                            </Badge>
+                            <span className="text-sm text-gray-700">{step}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-semibold mb-2 flex items-center space-x-2 text-green-600">
+                          <CheckCircle className="w-4 h-4" />
+                          <span>Advantages</span>
+                        </h4>
+                        <ul className="space-y-1">
+                          {selectedAuctionData.details.advantages.map((advantage, index) => (
+                            <li key={index} className="text-sm text-gray-700 flex items-center space-x-2">
+                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                              <span>{advantage}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold mb-2 flex items-center space-x-2 text-orange-600">
+                          <Eye className="w-4 h-4" />
+                          <span>Disadvantages</span>
+                        </h4>
+                        <ul className="space-y-1">
+                          {selectedAuctionData.details.disadvantages.map((disadvantage, index) => (
+                            <li key={index} className="text-sm text-gray-700 flex items-center space-x-2">
+                              <div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
+                              <span>{disadvantage}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                      <h4 className="font-semibold mb-2 flex items-center space-x-2">
+                        <Lightbulb className="w-4 h-4 text-yellow-500" />
+                        <span>Real-World Examples</span>
+                      </h4>
+                      <p className="text-sm text-gray-700">{selectedAuctionData.details.realWorld}</p>
                     </div>
                   </CardContent>
                 </Card>
-              );
-            })}
+              )}
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </TabsContent>
 
-      {/* Algorithm Details */}
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="steps">Step-by-Step</TabsTrigger>
-          <TabsTrigger value="code">Implementation</TabsTrigger>
-          <TabsTrigger value="applications">Applications</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="strategies" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Strategy Selection */}
+            <Card className="bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-lg">AI Strategies</CardTitle>
+                <CardDescription>Select a strategy to learn more</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {strategies.map((strategy) => {
+                  const IconComponent = strategy.icon;
+                  return (
+                    <Button
+                      key={strategy.id}
+                      variant={selectedStrategy === strategy.id ? "default" : "outline"}
+                      className="w-full justify-start h-auto p-3"
+                      onClick={() => setSelectedStrategy(strategy.id)}
+                    >
+                      <div className="flex items-center space-x-3 text-left w-full">
+                        <IconComponent className={`w-5 h-5 ${strategy.color}`} />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium text-sm">{strategy.name}</div>
+                            <Badge variant="outline" className="text-xs">{strategy.efficiency}%</Badge>
+                          </div>
+                          <div className="text-xs text-gray-600">{strategy.description}</div>
+                          <Progress value={strategy.efficiency} className="h-1 mt-1" />
+                        </div>
+                      </div>
+                    </Button>
+                  );
+                })}
+              </CardContent>
+            </Card>
+
+            {/* Strategy Details */}
             <div className="lg:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <currentAlgorithm.icon className={`w-5 h-5 ${currentAlgorithm.color}`} />
-                    <span>{currentAlgorithm.name}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-gray-700">{currentAlgorithm.description}</p>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-blue-50 rounded-lg p-4">
-                      <h4 className="font-semibold text-blue-800 mb-2">✅ Advantages</h4>
-                      <ul className="text-sm space-y-1">
-                        {currentAlgorithm.advantages.map((advantage, index) => (
-                          <li key={index} className="text-blue-700">• {advantage}</li>
-                        ))}
-                      </ul>
+              {selectedStrategyData && (
+                <Card className="bg-white/80 backdrop-blur-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <selectedStrategyData.icon className={`w-5 h-5 ${selectedStrategyData.color}`} />
+                        <span>{selectedStrategyData.name}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="outline">{selectedStrategyData.complexity}</Badge>
+                        <Badge className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                          {selectedStrategyData.efficiency}% Efficiency
+                        </Badge>
+                      </div>
+                    </CardTitle>
+                    <CardDescription>{selectedStrategyData.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <h4 className="font-semibold mb-2 flex items-center space-x-2">
+                        <Brain className="w-4 h-4 text-purple-500" />
+                        <span>Core Concept</span>
+                      </h4>
+                      <p className="text-sm text-gray-700">{selectedStrategyData.details.concept}</p>
                     </div>
-                    
-                    <div className="bg-red-50 rounded-lg p-4">
-                      <h4 className="font-semibold text-red-800 mb-2">⚠️ Disadvantages</h4>
-                      <ul className="text-sm space-y-1">
-                        {currentAlgorithm.disadvantages.map((disadvantage, index) => (
-                          <li key={index} className="text-red-700">• {disadvantage}</li>
-                        ))}
-                      </ul>
+
+                    <Separator />
+
+                    <div>
+                      <h4 className="font-semibold mb-2 flex items-center space-x-2">
+                        <Calculator className="w-4 h-4 text-blue-500" />
+                        <span>Algorithm</span>
+                      </h4>
+                      <div className="bg-gray-100 rounded-lg p-3">
+                        <code className="text-sm text-gray-800">{selectedStrategyData.details.algorithm}</code>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
 
-            <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Clock className="w-5 h-5" />
-                    <span>Complexity Analysis</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold mb-2">Time Complexity</h4>
-                    <Badge variant="secondary" className="text-lg font-mono">
-                      {currentAlgorithm.timeComplexity}
-                    </Badge>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-semibold mb-2">Space Complexity</h4>
-                    <Badge variant="secondary" className="text-lg font-mono">
-                      {currentAlgorithm.spaceComplexity}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
+                    <Separator />
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Target className="w-5 h-5" />
-                    <span>Best Use Cases</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="text-sm space-y-2">
-                    {currentAlgorithm.applications.map((application, index) => (
-                      <li key={index} className="flex items-start space-x-2">
-                        <span className="text-blue-500 mt-1">•</span>
-                        <span>{application}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-semibold mb-2 flex items-center space-x-2 text-green-600">
+                          <CheckCircle className="w-4 h-4" />
+                          <span>Strengths</span>
+                        </h4>
+                        <ul className="space-y-1">
+                          {selectedStrategyData.details.strengths.map((strength, index) => (
+                            <li key={index} className="text-sm text-gray-700 flex items-center space-x-2">
+                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                              <span>{strength}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold mb-2 flex items-center space-x-2 text-red-600">
+                          <Eye className="w-4 h-4" />
+                          <span>Weaknesses</span>
+                        </h4>
+                        <ul className="space-y-1">
+                          {selectedStrategyData.details.weaknesses.map((weakness, index) => (
+                            <li key={index} className="text-sm text-gray-700 flex items-center space-x-2">
+                              <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                              <span>{weakness}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                      <h4 className="font-semibold mb-2 flex items-center space-x-2">
+                        <Target className="w-4 h-4 text-orange-500" />
+                        <span>Best Used For</span>
+                      </h4>
+                      <p className="text-sm text-gray-700">{selectedStrategyData.details.bestFor}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
-        </TabsContent>
-
-        <TabsContent value="steps" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Layers className="w-5 h-5" />
-                  <span>Step-by-Step Execution</span>
-                </div>
-                <Button 
-                  onClick={runStepByStep} 
-                  disabled={isAnimating}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {isAnimating ? (
-                    <>
-                      <Clock className="w-4 h-4 mr-2 animate-spin" />
-                      Running...
-                    </>
-                  ) : (
-                    <>
-                      <PlayCircle className="w-4 h-4 mr-2" />
-                      Run Demo
-                    </>
-                  )}
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <Progress value={((currentStep + 1) / currentAlgorithm.steps.length) * 100} className="h-2" />
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {currentAlgorithm.steps.map((step, index) => (
-                    <Card 
-                      key={index}
-                      className={`transition-all ${
-                        index <= currentStep ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'
-                      } ${index === currentStep ? 'ring-2 ring-blue-500' : ''}`}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                            index <= currentStep ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-600'
-                          }`}>
-                            {step.step}
-                          </div>
-                          <h3 className="font-semibold text-sm">{step.title}</h3>
-                        </div>
-                        <p className="text-xs text-gray-600 mb-2">{step.description}</p>
-                        {step.complexity && (
-                          <Badge variant="outline" className="text-xs">
-                            {step.complexity}
-                          </Badge>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="code" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Code className="w-5 h-5" />
-                <span>Implementation Details</span>
-              </CardTitle>
-              <CardDescription>
-                Pseudocode and implementation concepts for {currentAlgorithm.name}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-gray-900 rounded-lg p-6 text-green-400 font-mono text-sm overflow-x-auto">
-                <pre>{currentAlgorithm.pseudocode}</pre>
-              </div>
-              
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <h4 className="font-semibold text-blue-800 mb-2">🔧 Key Implementation Points</h4>
-                  <ul className="text-sm text-blue-700 space-y-1">
-                    <li>• Focus on the core algorithmic logic</li>
-                    <li>• Handle edge cases appropriately</li>
-                    <li>• Optimize for the specific auction context</li>
-                    <li>• Consider real-time performance requirements</li>
-                  </ul>
-                </div>
-                
-                <div className="bg-green-50 rounded-lg p-4">
-                  <h4 className="font-semibold text-green-800 mb-2">💡 Optimization Tips</h4>
-                  <ul className="text-sm text-green-700 space-y-1">
-                    <li>• Use memoization where applicable</li>
-                    <li>• Implement early termination conditions</li>
-                    <li>• Consider approximate solutions for speed</li>
-                    <li>• Profile and optimize critical paths</li>
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="applications" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <TrendingUp className="w-5 h-5" />
-                <span>Real-World Applications</span>
-              </CardTitle>
-              <CardDescription>
-                How {currentAlgorithm.name} is used in practice across different domains
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-lg">Auction Scenarios</h3>
-                  {currentAlgorithm.applications.map((application, index) => (
-                    <div key={index} className="border-l-4 border-blue-500 pl-4">
-                      <h4 className="font-medium">{application}</h4>
-                      <p className="text-sm text-gray-600">
-                        Real-time implementation in competitive bidding environments
-                      </p>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-lg">Industry Examples</h3>
-                  <div className="space-y-3">
-                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4">
-                      <h4 className="font-medium text-blue-800">Financial Trading</h4>
-                      <p className="text-sm text-blue-700">
-                        High-frequency trading algorithms for optimal execution
-                      </p>
-                    </div>
-                    
-                    <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-4">
-                      <h4 className="font-medium text-green-800">Ad Auctions</h4>
-                      <p className="text-sm text-green-700">
-                        Real-time bidding for digital advertising placements
-                      </p>
-                    </div>
-                    
-                    <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-4">
-                      <h4 className="font-medium text-purple-800">Resource Allocation</h4>
-                      <p className="text-sm text-purple-700">
-                        Cloud computing and spectrum allocation auctions
-                      </p>
-                    </div>
-                    
-                    <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg p-4">
-                      <h4 className="font-medium text-orange-800">Procurement</h4>
-                      <p className="text-sm text-orange-700">
-                        Government and corporate procurement systems
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>
