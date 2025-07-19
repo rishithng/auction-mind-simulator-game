@@ -580,43 +580,46 @@ const MultiItemAuction = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background relative overflow-hidden">
       {/* Enhanced Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Gradient Orbs */}
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/2 -right-32 w-96 h-96 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full mix-blend-multiply filter blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute -bottom-32 left-1/2 w-96 h-96 bg-gradient-to-r from-indigo-400/20 to-blue-400/20 rounded-full mix-blend-multiply filter blur-3xl animate-pulse delay-2000"></div>
+        {/* Main gradient orbs with enhanced animation */}
+        <div className="absolute -top-32 -left-32 w-96 h-96 bg-gradient-to-r from-primary/15 via-primary/10 to-transparent rounded-full mix-blend-multiply filter blur-3xl animate-float"></div>
+        <div className="absolute top-1/2 -right-32 w-96 h-96 bg-gradient-to-r from-secondary/15 via-accent/10 to-transparent rounded-full mix-blend-multiply filter blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute -bottom-32 left-1/2 w-96 h-96 bg-gradient-to-r from-primary/12 via-muted/8 to-transparent rounded-full mix-blend-multiply filter blur-3xl animate-float" style={{ animationDelay: '4s' }}></div>
         
-        {/* Floating Elements */}
-        <div className="absolute top-1/4 left-1/4 w-3 h-3 bg-blue-400/60 rounded-full animate-bounce delay-300"></div>
-        <div className="absolute top-1/3 right-1/4 w-2 h-2 bg-purple-400/60 rounded-full animate-bounce delay-700"></div>
-        <div className="absolute bottom-1/4 left-1/3 w-3 h-3 bg-indigo-400/60 rounded-full animate-bounce delay-1100"></div>
-        <div className="absolute bottom-1/3 right-1/3 w-2 h-2 bg-pink-400/60 rounded-full animate-bounce delay-1500"></div>
+        {/* Enhanced floating elements */}
+        <div className="absolute top-1/4 left-1/4 w-4 h-4 bg-primary/50 rounded-full animate-particle-float shadow-lg"></div>
+        <div className="absolute top-1/3 right-1/4 w-3 h-3 bg-secondary/50 rounded-full animate-particle-float shadow-lg" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute bottom-1/4 left-1/3 w-4 h-4 bg-accent/50 rounded-full animate-particle-float shadow-lg" style={{ animationDelay: '4s' }}></div>
+        <div className="absolute bottom-1/3 right-1/3 w-3 h-3 bg-primary/50 rounded-full animate-particle-float shadow-lg" style={{ animationDelay: '6s' }}></div>
         
-        {/* Grid Pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] bg-[size:64px_64px] animate-pulse"></div>
+        {/* Animated grid pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(var(--primary)/0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(var(--primary)/0.02)_1px,transparent_1px)] bg-[size:64px_64px] animate-pulse opacity-40"></div>
+        
+        {/* Subtle shimmer effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent animate-shimmer"></div>
       </div>
 
       <div className="relative z-10 space-y-8 p-6">
-        {/* Setup Panel */}
-        <Card className="border-0 bg-white/80 backdrop-blur-xl shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-[1.01]">
+        {/* Enhanced Setup Panel */}
+        <Card className="border-0 bg-card/80 backdrop-blur-xl shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-[1.01] group">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center space-x-3 text-xl">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                <ShoppingCart className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-lg group-hover:animate-gentle-glow">
+                <ShoppingCart className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                 Smart Multi-Item Auction
               </span>
-              <div className="flex items-center space-x-1 animate-pulse">
+              <div className="flex items-center space-x-1 animate-gentle-glow">
                 <Sparkles className="w-4 h-4 text-yellow-500" />
-                <Badge className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs">
+                <Badge className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs shadow-lg">
                   AI Enhanced
                 </Badge>
               </div>
             </CardTitle>
-            <CardDescription className="text-base text-gray-600">
+            <CardDescription className="text-base text-muted-foreground">
               Experience intelligent bidding strategies competing in real-time with enhanced AI algorithms
             </CardDescription>
           </CardHeader>
@@ -624,7 +627,7 @@ const MultiItemAuction = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <Label htmlFor="budget" className="text-sm font-semibold flex items-center space-x-2">
-                  <TrendingUp className="w-4 h-4 text-green-500" />
+                  <TrendingUp className="w-4 h-4 text-emerald-500" />
                   <span>Your Budget (₹)</span>
                 </Label>
                 <Input
@@ -636,7 +639,7 @@ const MultiItemAuction = () => {
                   max={5000}
                   step={100}
                   disabled={isRunning}
-                  className="h-12 bg-white/90 backdrop-blur-sm border-2 border-blue-200 focus:border-blue-500 transition-all duration-300"
+                  className="h-12 bg-background/90 backdrop-blur-sm border-2 border-primary/20 focus:border-primary/50 transition-all duration-300 hover:bg-background group-hover:shadow-lg"
                 />
               </div>
               <div className="space-y-3">
@@ -645,10 +648,10 @@ const MultiItemAuction = () => {
                   <span>Your AI Strategy</span>
                 </Label>
                 <Select value={userStrategy} onValueChange={setUserStrategy} disabled={isRunning}>
-                  <SelectTrigger className="h-12 bg-white/90 backdrop-blur-sm border-2 border-purple-200 focus:border-purple-500 transition-all duration-300">
+                  <SelectTrigger className="h-12 bg-background/90 backdrop-blur-sm border-2 border-secondary/20 focus:border-secondary/50 transition-all duration-300 hover:bg-background group-hover:shadow-lg">
                     <SelectValue placeholder="Select AI strategy" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white/95 backdrop-blur-xl">
+                  <SelectContent className="bg-background/95 backdrop-blur-xl border-border/50">
                     <SelectItem value="greedy">⚡ Greedy Algorithm</SelectItem>
                     <SelectItem value="dynamic">🧠 Dynamic Programming</SelectItem>
                     <SelectItem value="minimax">🎯 Game Theory (Minimax)</SelectItem>
@@ -658,10 +661,10 @@ const MultiItemAuction = () => {
               </div>
             </div>
             
-            <Separator className="bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+            <Separator className="bg-gradient-to-r from-transparent via-border to-transparent" />
             
-            {/* Control Panel positioned below setup */}
-            <div className="bg-gradient-to-r from-blue-50/80 to-purple-50/80 rounded-xl p-4 backdrop-blur-sm">
+            {/* Enhanced Control Panel */}
+            <div className="bg-gradient-to-r from-primary/5 via-secondary/5 to-accent/5 rounded-xl p-4 backdrop-blur-sm border border-border/30">
               <ControlPanel
                 isRunning={isRunning}
                 isPaused={isPaused}
@@ -679,10 +682,10 @@ const MultiItemAuction = () => {
         </Card>
 
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-          {/* Current Auction - Takes more space */}
+          {/* Current Auction - Enhanced styling */}
           <div className="xl:col-span-3 space-y-8">
             {currentItem && (
-              <div className="animate-fade-in">
+              <div className="animate-fade-slide-up">
                 <TurnBasedAuction
                   item={currentItem}
                   round={currentRound + 1}
@@ -698,15 +701,15 @@ const MultiItemAuction = () => {
             )}
 
             {/* Enhanced Animated Bidders */}
-            <Card className="border-0 bg-white/80 backdrop-blur-xl shadow-2xl hover:shadow-3xl transition-all duration-500">
+            <Card className="border-0 bg-card/80 backdrop-blur-xl shadow-2xl hover:shadow-3xl transition-all duration-500 group">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-lg group-hover:animate-gentle-glow">
                     <Users className="w-4 h-4 text-white" />
                   </div>
                   <span>AI Bidders Competition</span>
                   {roundInProgress && (
-                    <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white animate-pulse shadow-lg">
+                    <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white animate-gentle-glow shadow-lg">
                       <div className="w-2 h-2 bg-white rounded-full mr-2 animate-ping"></div>
                       LIVE
                     </Badge>
@@ -716,7 +719,7 @@ const MultiItemAuction = () => {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {bidders.map((bidder, index) => (
-                    <div key={bidder.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                    <div key={bidder.id} className="animate-fade-slide-up" style={{ animationDelay: `${index * 0.1}s` }}>
                       <AnimatedBidder
                         bidder={bidder}
                         isCurrentTurn={index === currentBidderIndex && roundInProgress}
@@ -731,12 +734,12 @@ const MultiItemAuction = () => {
             </Card>
           </div>
 
-          {/* Sidebar - Auction Queue */}
+          {/* Enhanced Sidebar - Auction Queue */}
           <div className="xl:col-span-1">
-            <Card className="border-0 bg-white/80 backdrop-blur-xl shadow-2xl hover:shadow-3xl transition-all duration-500 sticky top-6">
+            <Card className="border-0 bg-card/80 backdrop-blur-xl shadow-2xl hover:shadow-3xl transition-all duration-500 sticky top-6 group">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg group-hover:animate-gentle-glow">
                     <Target className="w-4 h-4 text-white" />
                   </div>
                   <span className="text-lg">Auction Queue</span>
@@ -747,51 +750,51 @@ const MultiItemAuction = () => {
                   {auctionItems.map((item, index) => (
                     <div 
                       key={item.id} 
-                      className={`p-4 rounded-xl border-2 transition-all duration-500 hover:scale-105 ${
+                      className={`p-4 rounded-xl border-2 transition-all duration-500 hover:scale-105 group/item ${
                         index === currentRound ? 
-                          'border-blue-500 bg-gradient-to-r from-blue-50 to-purple-50 shadow-xl scale-110 animate-pulse' :
+                          'border-primary bg-gradient-to-r from-primary/10 to-secondary/10 shadow-xl scale-110 animate-gentle-glow' :
                         item.sold ? 
-                          'border-green-500 bg-gradient-to-r from-green-50 to-emerald-50 shadow-md' :
-                        'border-gray-200 bg-white/60 hover:border-gray-300 hover:bg-white/80'
+                          'border-emerald-500 bg-gradient-to-r from-emerald-50/50 to-emerald-100/50 dark:from-emerald-950/20 dark:to-emerald-900/20 shadow-md' :
+                        'border-border bg-card/60 hover:border-border/70 hover:bg-card/80'
                       }`}
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h4 className="font-semibold text-sm text-gray-800">{item.name}</h4>
-                          <p className="text-xs text-gray-600">Est. ₹{item.estimatedValue}</p>
+                          <h4 className="font-semibold text-sm text-foreground">{item.name}</h4>
+                          <p className="text-xs text-muted-foreground">Est. ₹{item.estimatedValue.toLocaleString()}</p>
                           {index === currentRound && roundInProgress && (
-                            <p className="text-xs text-blue-700 font-bold animate-pulse">
-                              Live: ₹{item.currentPrice}
+                            <p className="text-xs text-primary font-bold animate-gentle-glow">
+                              Live: ₹{item.currentPrice.toLocaleString()}
                             </p>
                           )}
                         </div>
                         <div className="text-right">
                           {item.sold ? (
-                            <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs shadow-md">
+                            <Badge className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-xs shadow-md">
                               ✓ Sold
                             </Badge>
                           ) : index === currentRound ? (
-                            <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs animate-pulse shadow-lg">
+                            <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs animate-gentle-glow shadow-lg">
                               🔥 Live
                             </Badge>
                           ) : index < currentRound ? (
-                            <Badge variant="outline" className="text-xs border-gray-300">
+                            <Badge variant="outline" className="text-xs border-muted-foreground/30">
                               ⏭️ Past
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-xs border-blue-300 text-blue-600">
+                            <Badge variant="outline" className="text-xs border-primary/30 text-primary">
                               ⏳ Queue
                             </Badge>
                           )}
                         </div>
                       </div>
                       {item.winner && (
-                        <div className="mt-2 p-2 bg-green-100/80 rounded-lg">
-                          <p className="text-xs text-green-700 font-medium">
+                        <div className="mt-2 p-2 bg-emerald-100/80 dark:bg-emerald-950/40 rounded-lg border border-emerald-200/50 dark:border-emerald-800/50">
+                          <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">
                             🏆 Winner: {item.winner}
                           </p>
-                          <p className="text-xs text-green-600">
-                            Final Price: ₹{item.finalPrice}
+                          <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                            Final Price: ₹{item.finalPrice?.toLocaleString()}
                           </p>
                         </div>
                       )}
