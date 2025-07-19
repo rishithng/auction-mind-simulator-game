@@ -9,12 +9,14 @@ import { Separator } from "@/components/ui/separator";
 import { 
   ShoppingCart,
   Users,
-  Target
+  Target,
+  Sparkles,
+  TrendingUp,
+  Zap
 } from "lucide-react";
 import { toast } from "sonner";
 import AnimatedBidder from "./AnimatedBidder";
 import TurnBasedAuction from "./TurnBasedAuction";
-import RealTimeCommentary from "./RealTimeCommentary";
 import ControlPanel from "./ControlPanel";
 import AuctionResults from "./AuctionResults";
 
@@ -47,6 +49,7 @@ interface Bidder {
   color: string;
   efficiency: number;
   avatar: string;
+  strategicPreference?: string[];
 }
 
 interface CommentaryEntry {
@@ -147,7 +150,8 @@ const MultiItemAuction = () => {
       isActive: true,
       color: "bg-blue-500",
       efficiency: 0,
-      avatar: "AG"
+      avatar: "AG",
+      strategicPreference: ["Electronics", "Art"]
     },
     {
       id: 2,
@@ -163,7 +167,8 @@ const MultiItemAuction = () => {
       isActive: true,
       color: "bg-green-500",
       efficiency: 0,
-      avatar: "BD"
+      avatar: "BD",
+      strategicPreference: ["Jewelry", "Books"]
     },
     {
       id: 3,
@@ -179,7 +184,8 @@ const MultiItemAuction = () => {
       isActive: true,
       color: "bg-purple-500",
       efficiency: 0,
-      avatar: "CM"
+      avatar: "CM",
+      strategicPreference: ["Art", "Electronics"]
     },
     {
       id: 4,
@@ -195,7 +201,8 @@ const MultiItemAuction = () => {
       isActive: true,
       color: "bg-orange-500",
       efficiency: 0,
-      avatar: "YP"
+      avatar: "YP",
+      strategicPreference: ["Electronics", "Jewelry"]
     }
   ]);
 
@@ -224,6 +231,58 @@ const MultiItemAuction = () => {
     };
     setCommentary(prev => [newEntry, ...prev.slice(0, 19)]);
     setCommentaryCounter(prev => prev + 1);
+
+    // Show live notification
+    if (type !== 'system' && isRunning) {
+      toast(
+        `${bidder} - ${strategy}`,
+        {
+          description: message,
+          duration: 2000,
+          icon: type === 'result' ? '🏆' : type === 'action' ? '💰' : '🧠',
+        }
+      );
+    }
+  };
+
+  const calculateBidderScore = (bidder: Bidder, item: AuctionItem) => {
+    let score = 0;
+    
+    // Base score from value vs price ratio
+    const valueRatio = item.estimatedValue / item.currentPrice;
+    score += valueRatio * 30;
+    
+    // Budget consideration
+    const budgetRatio = bidder.remainingBudget / bidder.initialBudget;
+    score += budgetRatio * 20;
+    
+    // Strategic preference bonus
+    if (bidder.strategicPreference?.includes(item.category)) {
+      score += 25;
+    }
+    
+    // Competition analysis
+    const activeBidders = bidders.filter(b => b.name !== bidder.name && b.isActive);
+    const avgCompetitorBudget = activeBidders.reduce((sum, b) => sum + b.remainingBudget, 0) / activeBidders.length;
+    
+    if (bidder.remainingBudget > avgCompetitorBudget) {
+      score += 15;
+    }
+    
+    // Future opportunity cost
+    const futureItems = auctionItems.slice(currentRound + 1);
+    const futureValue = futureItems.reduce((sum, futureItem) => {
+      if (bidder.strategicPreference?.includes(futureItem.category)) {
+        return sum + futureItem.estimatedValue;
+      }
+      return sum;
+    }, 0);
+    
+    if (item.estimatedValue > futureValue * 0.3) {
+      score += 10;
+    }
+    
+    return score + (Math.random() * 20); // Add some randomness
   };
 
   const simulateBidderDecision = async (bidder: Bidder) => {
@@ -232,83 +291,59 @@ const MultiItemAuction = () => {
     setThinkingBidder(bidder.name);
     
     // Thinking delay for better UX
-    await new Promise(resolve => setTimeout(resolve, slowMode ? 2000 : 500));
+    await new Promise(resolve => setTimeout(resolve, slowMode ? 1500 : 400));
     
-    const futureItems = auctionItems.slice(currentRound + 1);
     let shouldBid = false;
     let bidAmount = 0;
-
+    
+    // Calculate strategic score for this item
+    const strategicScore = calculateBidderScore(bidder, currentItem);
+    
+    // Different strategies have different thresholds
+    let bidThreshold = 50;
     switch (bidder.strategy) {
       case "greedy":
-        if (currentItem.currentPrice < currentItem.estimatedValue * 0.8) {
-          bidAmount = Math.min(
-            currentItem.currentPrice + Math.floor(Math.random() * 50) + 25,
-            Math.floor(currentItem.estimatedValue * 0.9),
-            bidder.remainingBudget
-          );
-          shouldBid = bidAmount <= bidder.remainingBudget && bidAmount > currentItem.currentPrice;
-          if (shouldBid) {
-            addCommentary('strategy', `🧠 ${bidder.name} sees good profit potential → bidding aggressively!`, bidder.name, bidder.strategy, bidAmount);
-          } else {
-            addCommentary('strategy', `💭 ${bidder.name} thinks price is too high for profit`, bidder.name, bidder.strategy);
-          }
-        } else {
-          addCommentary('strategy', `⚠️ ${bidder.name} skipping - current price too close to estimated value`, bidder.name, bidder.strategy);
-        }
+        bidThreshold = 45; // More aggressive
         break;
-
       case "dynamic":
-        const totalFutureValue = futureItems.reduce((sum, item) => sum + item.estimatedValue, 0);
-        const currentValue = currentItem.estimatedValue;
-        const budgetRatio = bidder.remainingBudget / bidder.initialBudget;
-        
-        if (currentValue > totalFutureValue * 0.3 || budgetRatio > 0.7) {
-          bidAmount = Math.min(
-            Math.floor(currentItem.estimatedValue * 0.75),
-            currentItem.currentPrice + Math.floor(Math.random() * 40) + 30,
-            bidder.remainingBudget
-          );
-          shouldBid = bidAmount <= bidder.remainingBudget && bidAmount > currentItem.currentPrice;
-          if (shouldBid) {
-            addCommentary('strategy', `🧠 ${bidder.name} calculated this item is worth bidding on considering future opportunities`, bidder.name, bidder.strategy, bidAmount);
-          }
-        } else {
-          addCommentary('strategy', `🧠 ${bidder.name} is saving budget for more valuable future items (remaining: ₹${bidder.remainingBudget})`, bidder.name, bidder.strategy);
-        }
+        bidThreshold = 60; // More calculated
         break;
-
       case "minimax":
-        const competitors = bidders.filter(b => b.name !== bidder.name && b.isActive);
-        const avgCompetitorBudget = competitors.reduce((sum, b) => sum + b.remainingBudget, 0) / competitors.length;
-        
-        if (bidder.remainingBudget > avgCompetitorBudget * 0.8) {
-          bidAmount = Math.min(
-            currentItem.currentPrice + Math.floor(Math.random() * 45) + 35,
-            Math.floor(currentItem.estimatedValue * 0.85),
-            bidder.remainingBudget
-          );
-          shouldBid = bidAmount <= bidder.remainingBudget && bidAmount > currentItem.currentPrice;
-          if (shouldBid) {
-            addCommentary('strategy', `🎯 ${bidder.name} making strategic counter-move against competitors`, bidder.name, bidder.strategy, bidAmount);
-          }
-        } else {
-          addCommentary('strategy', `🎯 ${bidder.name} conserving budget - competitors have more firepower`, bidder.name, bidder.strategy);
-        }
+        bidThreshold = 55; // Balanced
         break;
-
       default:
-        // User strategy - now automated
-        shouldBid = Math.random() > 0.4; // 60% chance to bid
-        if (shouldBid) {
-          bidAmount = Math.min(
-            currentItem.currentPrice + Math.floor(Math.random() * 40) + 20,
-            bidder.remainingBudget
-          );
-          addCommentary('action', `🎮 ${bidder.name} (your automated strategy) decided to bid`, bidder.name, bidder.strategy, bidAmount);
-        } else {
-          addCommentary('action', `🎮 ${bidder.name} (your automated strategy) decided to pass this round`, bidder.name, bidder.strategy);
-        }
+        bidThreshold = 50;
         break;
+    }
+
+    shouldBid = strategicScore > bidThreshold && bidder.remainingBudget > currentItem.currentPrice + 50;
+
+    if (shouldBid) {
+      // More sophisticated bid calculation
+      const maxBid = Math.min(
+        Math.floor(currentItem.estimatedValue * (0.7 + Math.random() * 0.2)),
+        bidder.remainingBudget
+      );
+      
+      const minIncrement = Math.floor(25 + Math.random() * 40);
+      bidAmount = Math.min(
+        currentItem.currentPrice + minIncrement,
+        maxBid
+      );
+
+      if (bidAmount <= currentItem.currentPrice || bidAmount > bidder.remainingBudget) {
+        shouldBid = false;
+      } else {
+        addCommentary('strategy', `🎯 Strategic score: ${strategicScore.toFixed(1)} - Bidding ${bidAmount}!`, bidder.name, bidder.strategy, bidAmount);
+      }
+    } else {
+      const reasons = [
+        `Strategic score too low (${strategicScore.toFixed(1)})`,
+        `Saving budget for preferred items`,
+        `Current price too high for strategy`,
+        `Better opportunities ahead`
+      ];
+      addCommentary('strategy', `🤔 ${reasons[Math.floor(Math.random() * reasons.length)]}`, bidder.name, bidder.strategy);
     }
 
     setThinkingBidder(null);
@@ -332,7 +367,6 @@ const MultiItemAuction = () => {
     }
     
     setLastActions(prev => ({ ...prev, [bidderName]: 'bid' }));
-    addCommentary('action', `💰 Placed bid of ₹${amount}`, bidderName, bidders.find(b => b.name === bidderName)?.strategy || '', amount);
     
     // Move to next bidder
     setCurrentBidderIndex(prev => (prev + 1) % bidders.length);
@@ -340,41 +374,10 @@ const MultiItemAuction = () => {
 
   const handleBidderPass = (bidderName: string) => {
     setLastActions(prev => ({ ...prev, [bidderName]: 'pass' }));
-    addCommentary('action', `⏭️ Passed on this round`, bidderName, bidders.find(b => b.name === bidderName)?.strategy || '');
     
     // Move to next bidder
     setCurrentBidderIndex(prev => (prev + 1) % bidders.length);
   };
-
-  // Main auction timer and logic
-  useEffect(() => {
-    if (!isRunning || isPaused || !currentItem || !roundInProgress) return;
-
-    const timer = setInterval(() => {
-      setTimeRemaining(prev => {
-        if (prev <= 1) {
-          finalizeCurrentRound();
-          return 0;
-        }
-        return prev - 1;
-      });
-
-      setAuctionProgress(((15 - timeRemaining) / 15) * 100);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [isRunning, isPaused, timeRemaining, currentRound, roundInProgress]);
-
-  // Handle bidder turns
-  useEffect(() => {
-    if (!isRunning || isPaused || !currentItem || !roundInProgress || thinkingBidder) return;
-
-    const timer = setTimeout(() => {
-      simulateBidderDecision(currentBidder);
-    }, slowMode ? 1000 : 300);
-
-    return () => clearTimeout(timer);
-  }, [currentBidderIndex, isRunning, isPaused, roundInProgress, thinkingBidder]);
 
   const finalizeCurrentRound = () => {
     if (!currentItem) return;
@@ -417,7 +420,7 @@ const MultiItemAuction = () => {
       }));
 
       setLastActions(prev => ({ ...prev, [winner.name]: 'won' }));
-      addCommentary('result', `🏆 Won ${currentItem.name} for ₹${winner.currentBid} (Profit: ${profit > 0 ? '+' : ''}₹${profit})`, winner.name, winner.strategy, winner.currentBid);
+      addCommentary('result', `🏆 Won ${currentItem.name} for ₹${winner.currentBid} (Est. profit: ${profit > 0 ? '+' : ''}₹${profit})`, winner.name, winner.strategy, winner.currentBid);
       
       auctionItems[currentRound] = wonItem;
     } else {
@@ -435,14 +438,47 @@ const MultiItemAuction = () => {
         setAuctionProgress(0);
         setRoundInProgress(true);
         setLastActions({});
-        toast.info(`Round ${currentRound + 2} starting: ${auctionItems[currentRound + 1].name}`);
+        toast.info(`Round ${currentRound + 2}: ${auctionItems[currentRound + 1].name}`, {
+          icon: '🔥',
+          duration: 2000,
+        });
       } else {
         setIsRunning(false);
         setShowResults(true);
-        toast.success("Auction completed! Check your results.");
+        toast.success("🎉 Auction completed! Check your results.", {
+          duration: 4000,
+        });
       }
-    }, 3000);
+    }, 2500);
   };
+
+  useEffect(() => {
+    if (!isRunning || isPaused || !currentItem || !roundInProgress) return;
+
+    const timer = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev <= 1) {
+          finalizeCurrentRound();
+          return 0;
+        }
+        return prev - 1;
+      });
+
+      setAuctionProgress(((15 - timeRemaining) / 15) * 100);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isRunning, isPaused, timeRemaining, currentRound, roundInProgress]);
+
+  useEffect(() => {
+    if (!isRunning || isPaused || !currentItem || !roundInProgress || thinkingBidder) return;
+
+    const timer = setTimeout(() => {
+      simulateBidderDecision(currentBidder);
+    }, slowMode ? 800 : 200);
+
+    return () => clearTimeout(timer);
+  }, [currentBidderIndex, isRunning, isPaused, roundInProgress, thinkingBidder]);
 
   const startAuction = () => {
     if (isPaused) {
@@ -484,14 +520,16 @@ const MultiItemAuction = () => {
       item.finalPrice = undefined;
     });
 
-    addCommentary('system', 'Multi-item automatic auction started! 🚀', 'System', 'system');
-    toast.success("Multi-item auction started! Watch the bidders compete automatically!");
+    addCommentary('system', '🚀 Smart auction started with improved AI strategies!', 'System', 'system');
+    toast.success("🎯 Smart auction started! AI bidders will compete strategically!", {
+      duration: 3000,
+    });
   };
 
   const pauseAuction = () => {
     setIsPaused(true);
     setRoundInProgress(false);
-    toast.info("Auction paused");
+    toast.info("⏸️ Auction paused", { duration: 2000 });
   };
 
   const resetAuction = () => {
@@ -527,12 +565,14 @@ const MultiItemAuction = () => {
       item.finalPrice = undefined;
     });
 
-    toast.info("Auction reset");
+    toast.info("🔄 Auction reset", { duration: 2000 });
   };
 
   const toggleSlowMode = (enabled: boolean) => {
     setSlowMode(enabled);
-    toast.info(enabled ? "Slow mode enabled - detailed bidding" : "Fast mode enabled - quick auction");
+    toast.info(enabled ? "🐌 Detailed mode - watch every move" : "🚀 Fast mode - quick decisions", {
+      duration: 2000,
+    });
   };
 
   if (showResults) {
@@ -540,48 +580,88 @@ const MultiItemAuction = () => {
   }
 
   return (
-    <div className="space-y-6 bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen p-6">
-      {/* Setup Panel */}
-      <Card className="border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <ShoppingCart className="w-5 h-5" />
-            <span>Automatic Multi-Item Auction</span>
-          </CardTitle>
-          <CardDescription>
-            Watch four different bidding strategies compete automatically in real-time
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="budget">Your Budget (₹)</Label>
-              <Input
-                id="budget"
-                type="number"
-                value={userBudget}
-                onChange={(e) => setUserBudget(Number(e.target.value))}
-                min={1000}
-                max={5000}
-                step={100}
-                disabled={isRunning}
-              />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
+      {/* Enhanced Animated Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Gradient Orbs */}
+        <div className="absolute -top-32 -left-32 w-96 h-96 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/2 -right-32 w-96 h-96 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full mix-blend-multiply filter blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute -bottom-32 left-1/2 w-96 h-96 bg-gradient-to-r from-indigo-400/20 to-blue-400/20 rounded-full mix-blend-multiply filter blur-3xl animate-pulse delay-2000"></div>
+        
+        {/* Floating Elements */}
+        <div className="absolute top-1/4 left-1/4 w-3 h-3 bg-blue-400/60 rounded-full animate-bounce delay-300"></div>
+        <div className="absolute top-1/3 right-1/4 w-2 h-2 bg-purple-400/60 rounded-full animate-bounce delay-700"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-3 h-3 bg-indigo-400/60 rounded-full animate-bounce delay-1100"></div>
+        <div className="absolute bottom-1/3 right-1/3 w-2 h-2 bg-pink-400/60 rounded-full animate-bounce delay-1500"></div>
+        
+        {/* Grid Pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] bg-[size:64px_64px] animate-pulse"></div>
+      </div>
+
+      <div className="relative z-10 space-y-8 p-6">
+        {/* Setup Panel */}
+        <Card className="border-0 bg-white/80 backdrop-blur-xl shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-[1.01]">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center space-x-3 text-xl">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <ShoppingCart className="w-5 h-5 text-white" />
+              </div>
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Smart Multi-Item Auction
+              </span>
+              <div className="flex items-center space-x-1 animate-pulse">
+                <Sparkles className="w-4 h-4 text-yellow-500" />
+                <Badge className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs">
+                  AI Enhanced
+                </Badge>
+              </div>
+            </CardTitle>
+            <CardDescription className="text-base text-gray-600">
+              Experience intelligent bidding strategies competing in real-time with enhanced AI algorithms
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <Label htmlFor="budget" className="text-sm font-semibold flex items-center space-x-2">
+                  <TrendingUp className="w-4 h-4 text-green-500" />
+                  <span>Your Budget (₹)</span>
+                </Label>
+                <Input
+                  id="budget"
+                  type="number"
+                  value={userBudget}
+                  onChange={(e) => setUserBudget(Number(e.target.value))}
+                  min={1000}
+                  max={5000}
+                  step={100}
+                  disabled={isRunning}
+                  className="h-12 bg-white/90 backdrop-blur-sm border-2 border-blue-200 focus:border-blue-500 transition-all duration-300"
+                />
+              </div>
+              <div className="space-y-3">
+                <Label htmlFor="strategy" className="text-sm font-semibold flex items-center space-x-2">
+                  <Zap className="w-4 h-4 text-purple-500" />
+                  <span>Your AI Strategy</span>
+                </Label>
+                <Select value={userStrategy} onValueChange={setUserStrategy} disabled={isRunning}>
+                  <SelectTrigger className="h-12 bg-white/90 backdrop-blur-sm border-2 border-purple-200 focus:border-purple-500 transition-all duration-300">
+                    <SelectValue placeholder="Select AI strategy" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white/95 backdrop-blur-xl">
+                    <SelectItem value="greedy">⚡ Greedy Algorithm</SelectItem>
+                    <SelectItem value="dynamic">🧠 Dynamic Programming</SelectItem>
+                    <SelectItem value="minimax">🎯 Game Theory (Minimax)</SelectItem>
+                    <SelectItem value="knapsack">💼 Knapsack Optimization</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="strategy">Your Strategy (Automated)</Label>
-              <Select value={userStrategy} onValueChange={setUserStrategy} disabled={isRunning}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select strategy" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="greedy">Greedy Algorithm</SelectItem>
-                  <SelectItem value="dynamic">Dynamic Programming</SelectItem>
-                  <SelectItem value="minimax">Game Theory (Minimax)</SelectItem>
-                  <SelectItem value="knapsack">Knapsack Optimization</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-end">
+            
+            <Separator className="bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+            
+            {/* Control Panel positioned below setup */}
+            <div className="bg-gradient-to-r from-blue-50/80 to-purple-50/80 rounded-xl p-4 backdrop-blur-sm">
               <ControlPanel
                 isRunning={isRunning}
                 isPaused={isPaused}
@@ -595,109 +675,132 @@ const MultiItemAuction = () => {
                 timeRemaining={timeRemaining}
               />
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Current Auction */}
-        <div className="xl:col-span-2 space-y-6">
-          {currentItem && (
-            <TurnBasedAuction
-              item={currentItem}
-              round={currentRound + 1}
-              totalRounds={auctionItems.length}
-              currentBidder={currentBidder?.name || ''}
-              timeRemaining={timeRemaining}
-              onBidPlaced={handleBidPlaced}
-              onBidderPass={handleBidderPass}
-              isActive={roundInProgress}
-              roundProgress={auctionProgress}
-            />
-          )}
-
-          {/* Animated Bidders */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Users className="w-5 h-5" />
-                <span>Live Bidders</span>
-                {roundInProgress && (
-                  <Badge className="bg-green-500 animate-pulse">LIVE</Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {bidders.map((bidder, index) => (
-                  <AnimatedBidder
-                    key={bidder.id}
-                    bidder={bidder}
-                    isCurrentTurn={index === currentBidderIndex && roundInProgress}
-                    isThinking={thinkingBidder === bidder.name}
-                    lastAction={lastActions[bidder.name] || null}
-                    position={index}
-                  />
-                ))}
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+          {/* Current Auction - Takes more space */}
+          <div className="xl:col-span-3 space-y-8">
+            {currentItem && (
+              <div className="animate-fade-in">
+                <TurnBasedAuction
+                  item={currentItem}
+                  round={currentRound + 1}
+                  totalRounds={auctionItems.length}
+                  currentBidder={currentBidder?.name || ''}
+                  timeRemaining={timeRemaining}
+                  onBidPlaced={handleBidPlaced}
+                  onBidderPass={handleBidderPass}
+                  isActive={roundInProgress}
+                  roundProgress={auctionProgress}
+                />
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            )}
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          <RealTimeCommentary
-            commentary={commentary}
-            currentRound={currentRound}
-            isActive={roundInProgress}
-          />
-
-          {/* Auction Items Overview */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Target className="w-5 h-5" />
-                <span>Auction Queue</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {auctionItems.map((item, index) => (
-                  <div key={item.id} className={`p-3 rounded-lg border-2 transition-all ${
-                    index === currentRound ? 'border-blue-500 bg-blue-50 scale-105' :
-                    item.sold ? 'border-green-500 bg-green-50' :
-                    'border-gray-200 hover:border-gray-300'
-                  }`}>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-medium text-sm">{item.name}</h4>
-                        <p className="text-xs text-gray-600">Est. ₹{item.estimatedValue}</p>
-                        {index === currentRound && roundInProgress && (
-                          <p className="text-xs text-blue-600 font-medium">Current: ₹{item.currentPrice}</p>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        {item.sold ? (
-                          <Badge className="bg-green-500 text-xs">✓ Sold</Badge>
-                        ) : index === currentRound ? (
-                          <Badge className="bg-blue-500 text-xs animate-pulse">🔥 Live</Badge>
-                        ) : index < currentRound ? (
-                          <Badge variant="outline" className="text-xs">⏭️ Past</Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-xs">⏳ Queue</Badge>
-                        )}
-                      </div>
-                    </div>
-                    {item.winner && (
-                      <p className="text-xs text-green-600 mt-1">
-                        🏆 Winner: {item.winner} (₹{item.finalPrice})
-                      </p>
-                    )}
+            {/* Enhanced Animated Bidders */}
+            <Card className="border-0 bg-white/80 backdrop-blur-xl shadow-2xl hover:shadow-3xl transition-all duration-500">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                    <Users className="w-4 h-4 text-white" />
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  <span>AI Bidders Competition</span>
+                  {roundInProgress && (
+                    <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white animate-pulse shadow-lg">
+                      <div className="w-2 h-2 bg-white rounded-full mr-2 animate-ping"></div>
+                      LIVE
+                    </Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {bidders.map((bidder, index) => (
+                    <div key={bidder.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                      <AnimatedBidder
+                        bidder={bidder}
+                        isCurrentTurn={index === currentBidderIndex && roundInProgress}
+                        isThinking={thinkingBidder === bidder.name}
+                        lastAction={lastActions[bidder.name] || null}
+                        position={index}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sidebar - Auction Queue */}
+          <div className="xl:col-span-1">
+            <Card className="border-0 bg-white/80 backdrop-blur-xl shadow-2xl hover:shadow-3xl transition-all duration-500 sticky top-6">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
+                    <Target className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-lg">Auction Queue</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {auctionItems.map((item, index) => (
+                    <div 
+                      key={item.id} 
+                      className={`p-4 rounded-xl border-2 transition-all duration-500 hover:scale-105 ${
+                        index === currentRound ? 
+                          'border-blue-500 bg-gradient-to-r from-blue-50 to-purple-50 shadow-xl scale-110 animate-pulse' :
+                        item.sold ? 
+                          'border-green-500 bg-gradient-to-r from-green-50 to-emerald-50 shadow-md' :
+                        'border-gray-200 bg-white/60 hover:border-gray-300 hover:bg-white/80'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h4 className="font-semibold text-sm text-gray-800">{item.name}</h4>
+                          <p className="text-xs text-gray-600">Est. ₹{item.estimatedValue}</p>
+                          {index === currentRound && roundInProgress && (
+                            <p className="text-xs text-blue-700 font-bold animate-pulse">
+                              Live: ₹{item.currentPrice}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          {item.sold ? (
+                            <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs shadow-md">
+                              ✓ Sold
+                            </Badge>
+                          ) : index === currentRound ? (
+                            <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs animate-pulse shadow-lg">
+                              🔥 Live
+                            </Badge>
+                          ) : index < currentRound ? (
+                            <Badge variant="outline" className="text-xs border-gray-300">
+                              ⏭️ Past
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs border-blue-300 text-blue-600">
+                              ⏳ Queue
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      {item.winner && (
+                        <div className="mt-2 p-2 bg-green-100/80 rounded-lg">
+                          <p className="text-xs text-green-700 font-medium">
+                            🏆 Winner: {item.winner}
+                          </p>
+                          <p className="text-xs text-green-600">
+                            Final Price: ₹{item.finalPrice}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
