@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { 
   MessageSquare,
   Brain,
@@ -13,7 +14,8 @@ import {
   Clock,
   ArrowDown,
   Pause,
-  Play
+  Play,
+  Bell
 } from "lucide-react";
 
 interface CommentaryEntry {
@@ -40,6 +42,28 @@ const RealTimeCommentary = ({ commentary, currentRound, isActive }: RealTimeComm
   const bottomRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
   const [isNearBottom, setIsNearBottom] = useState(true);
+  const [lastCommentId, setLastCommentId] = useState<number | null>(null);
+
+  // Show live notification for new comments
+  useEffect(() => {
+    if (commentary.length > 0) {
+      const latestComment = commentary[commentary.length - 1];
+      
+      if (lastCommentId !== null && latestComment.id > lastCommentId && isActive) {
+        // Show notification for new comment
+        toast(
+          `${latestComment.bidder} - ${latestComment.strategy}`,
+          {
+            description: latestComment.message,
+            duration: 3000,
+            icon: <Bell className="w-4 h-4" />,
+          }
+        );
+      }
+      
+      setLastCommentId(latestComment.id);
+    }
+  }, [commentary, lastCommentId, isActive]);
 
   // Check if user is near bottom of scroll area
   const checkScrollPosition = () => {
